@@ -137,3 +137,165 @@
 
 ### Примеры использования
 
+#### Пример 1
+
+Такой PHP код:
+```
+require_once('HandLog/HandLog.php'); /* подключаем файл класса  */
+	
+	$log = new HandLog('LogName'); /* создаём объект класса(отсчёт общего времени начинается именно с этого момента)  */
+	
+	$flag1 = 5*5;
+	if($flag1==25){
+		$log->new_note(['Multiplying 5 by 5 equals 25',1,'Event Multiplication']); /* пример добавления записи в лог, ОБЯЗАТЕЛЬНЫ строка и тип действия, то есть можно передавать массив с количеством элементов от 2 до 4, 3-ий по счёту(начиная с единицы) - имя события, 4-ый - имя лога  */ 
+	}else{
+		$log->new_note(['Multiplying 5 by 5 is not equal to 25',0,'Event Multiplication']); /*
+	}
+	
+	sleep(1); /* односекундное бездействие, не влияющее на учёт времени каких-либо событий(так как после него не добавляются записи в "Event Multiplication", а до него добавляются записи в "Event Substraction" ), но влияющее на общее время, так как после него ещё добавляются записи  */
+	
+	$flag2 = 10-8;
+	if($flag2==2){
+		$log->new_note(['Subtraction 8 of 10 is 2',1,'Event Substraction']);
+	}else{
+		$log->new_note(['Subtracting 8 from 10 is not equal to 2',0,'Event Substraction']);
+	}
+	
+	sleep(1); /* это бездействие войдёт в событие "Event Substraction", так как в это событие добавляются записи до и после */
+	
+	$flag3 = 7-7;
+	if($flag3==1){
+		$log->new_note(['Subtraction 7 of 7 is 1',1,'Event Substraction']);
+	}else{
+		$log->new_note(['Subtracting 7 from 7 is not equal to 1',0,'Event Substraction']);
+	}
+	
+	$log->new_note(['Because subtracting 7 from 7 is 0',2,'Event Substraction']); 
+	
+	sleep(1); /* это бездействие войдёт в событие "Event Substraction", так как в это событие добавляются записи до и после */
+	
+	$flag4 = 11-7;
+	if($flag4==4){
+		$log->new_note(['Subtraction 7 of 11 is 4',1,'Event Substraction']);
+	}else{
+		$log->new_note(['Subtracting 7 from 11 is not equal to 1',0,'Event Substraction']);
+	}
+	
+	$log->new_note(['Subtracting 7 from 11 is 4 but false action appeared earlier',2,'Event Substraction']); /* Добавление записи типа "2"; данный тип записей участвует в выводе большинства режимов  */
+	$log->echo_log('LogName'); /* Выводим лог, под выводом подразумевается как запись(или дозапись) в файл, так и вывод непосредственно на экран посредством echo  */
+	
+	echo 'Select mode: '.$log->settings['select_mode']; /* Показываем используемый режим  */
+```
+С таким массивом настроек:
+
+```
+public $settings = [
+		'note_string' => '[#time#] >> #string#',
+		'string_separator' => "\r\n",
+		'time_template' => "d-m-Y H:i:s",
+		'event_start_string' => ['[#time#]---> Event [ #event# ] started',1],
+		'event_end_string' => ['[#time#]---> Event [ #event# ] ended. Spent time: #stime# sec',1],
+		'log_start_string' => ['[#time#]---> Log [ #log# ] started',1],
+		'log_end_string' => ['[#time#]---> Log [ #log# ] ended. Spent time: #stime# sec',1],
+		'select_mode' => 3,
+		'default_event' => 'Main',
+		'default_log' => 'Default',
+		'echo_mode' => 2,
+		'log_order' => 0,
+		'filename' => '#log#_lastLog.txt',
+		'refile_time_template' => "d.m.Y_H-i-s",
+		're_filename' => 'logsave_#log#_#time#.txt',
+		'file_size_limit' => 5*1024*1024,
+		'dir' => 'Logs',
+		'rewrite_mode' => 1,
+		'line_break_html' => 1,
+		'datum_filename' => 'handlog_datum.txt'
+	];
+```
+Даст примерно следующий результат:
+```
+[25-12-2018 19:59:21]---> Log [ LogName ] ended. Spent time: 3.00211596 sec
+[25-12-2018 19:59:21]---> Event [ Event Substraction ] ended. Spent time: 2.00038195 sec
+[25-12-2018 19:59:21] >> Subtracting 7 from 11 is 4 but false action appeared earlier
+[25-12-2018 19:59:20] >> Because subtracting 7 from 7 is 0
+[25-12-2018 19:59:20] >> Subtracting 7 from 7 is not equal to 1
+[25-12-2018 19:59:19] >> Subtraction 8 of 10 is 2
+[25-12-2018 19:59:19]---> Event [ Event Substraction ] started
+[25-12-2018 19:59:18]---> Event [ Event Multiplication ] ended. Spent time: 0.00001597 sec
+[25-12-2018 19:59:18] >> Multiplying 5 by 5 equals 25
+[25-12-2018 19:59:18]---> Event [ Event Multiplication ] started
+[25-12-2018 19:59:18]---> Log [ LogName ] started
+Select mode: 3
+```
+В данном примере, показывается, как работает 3-ий режим выбора записей: в случае возникновения записи типа "0", показываются записи типа "2" и последняя запись типа "1" предшествующая ошибке. В случае, когда нет записей ошибок, выбирается просто последняя успешная запись и записи типа "2".
+
+#### Пример 2
+
+Такой PHP код:
+
+```
+require_once('logger/HandLog.php');
+	
+	$log = new HandLog();
+	
+	$event1 = 'Event 1';
+	for($i=0;$i<6;$i++){
+		$type = rand(0,2);
+		$log->new_note(['Action '.$i.' Type: '.$type,$type,'Event 1']);
+	}
+	
+	for($i=0;$i<6;$i++){
+		$type = rand(0,2);
+		$log->new_note(['Action '.$i.' Type: '.$type,$type]);
+	}
+	
+	$log->echo_log();
+	
+	echo 'Select mode: <br>';
+	print_r($log->settings['select_mode']);
+  ```
+  С таким массивом настроек:
+
+```
+public $settings = [
+		'note_string' => '[#time#] >> #string#',
+		'string_separator' => "\r\n",
+		'time_template' => "d-m-Y H:i:s",
+		'event_start_string' => ['[#time#]---> Event [ #event# ] started',1],
+		'event_end_string' => ['[#time#]---> Event [ #event# ] ended. Spent time: #stime# sec',1],
+		'log_start_string' => ['[#time#]---> Log [ #log# ] started',1],
+		'log_end_string' => ['[#time#]---> Log [ #log# ] ended. Spent time: #stime# sec',1],
+		'select_mode' => [1,2],
+		'default_event' => 'Main',
+		'default_log' => 'Default',
+		'echo_mode' => 2,
+		'log_order' => 0,
+		'filename' => '#log#_lastLog.txt',
+		'refile_time_template' => "d.m.Y_H-i-s",
+		're_filename' => 'logsave_#log#_#time#.txt',
+		'file_size_limit' => 5*1024*1024,
+		'dir' => 'Logs',
+		'rewrite_mode' => 1,
+		'line_break_html' => 1,
+		'datum_filename' => 'handlog_datum.txt'
+	];
+```
+Даст примерно следующий результат:
+```
+[25-12-2018 22:34:34]---> Log [ Default ] ended. Spent time: 0.00009799 sec
+[25-12-2018 22:34:34]---> Event [ Main ] ended. Spent time: 0.00002599 sec
+[25-12-2018 22:34:34] >> Action 5 Type: 2
+[25-12-2018 22:34:34] >> Action 4 Type: 1
+[25-12-2018 22:34:34] >> Action 3 Type: 2
+[25-12-2018 22:34:34] >> Action 2 Type: 2
+[25-12-2018 22:34:34]---> Event [ Main ] started
+[25-12-2018 22:34:34]---> Event [ Event 1 ] ended. Spent time: 0.00003099 sec
+[25-12-2018 22:34:34] >> Action 4 Type: 1
+[25-12-2018 22:34:34] >> Action 2 Type: 2
+[25-12-2018 22:34:34] >> Action 1 Type: 1
+[25-12-2018 22:34:34] >> Action 0 Type: 1
+[25-12-2018 22:34:34]---> Event [ Event 1 ] started
+[25-12-2018 22:34:34]---> Log [ Default ] started
+Select mode: 
+Array ( [0] => 1 [1] => 2 )
+```
