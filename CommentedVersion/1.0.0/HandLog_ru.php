@@ -1,6 +1,6 @@
 <?php
 /*  Name: HandLog
-	Version: 1.0.0
+	Version: 1.0.1
 	Description: PHP class for fast creation variative logs
 	GitHub: https://github.com/MGGFLOW/HandLog
 	
@@ -180,6 +180,8 @@
 				$logname = $this->settings['default_log'];
 			}
 			$eventskeys = array_keys($this->data[$logname]['events']); /* создание массива имён событий  */
+			$eventendflag = $this->settings['event_end_string'][1]; /* флаг конца события  */
+			$eventstartflag = $this->settings['event_start_string'][1]; /* флаг начала события  */
 			$eventsflag = is_array($events); /* установка флага выбора событий  */
 			$mode = $this->settings['select_mode']; /* определение режима выбора записей  */
 			
@@ -196,7 +198,7 @@
 							break;
 						}
 					default:
-						if($num==$this->data[$logname]['events'][$eventskeys[$eventkey]]['first']){ /* определение начала события  */
+						if($num==$this->data[$logname]['events'][$eventskeys[$eventkey]]['first']  and $eventstartflag){ /* определение начала события  */
 							$out[] = [$eventkey,0];
 						}
 						
@@ -240,7 +242,7 @@
 									break;
 							}
 						}
-						if($num==$this->data[$logname]['events'][$eventskeys[$eventkey]]['last']){ /* определение конца события  */
+						if($num==$this->data[$logname]['events'][$eventskeys[$eventkey]]['last']  and $eventendflag){ /* определение конца события  */
 							$out[] = [$eventkey,1];
 						}
 						break;
